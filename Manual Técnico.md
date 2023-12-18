@@ -10,29 +10,72 @@ Este manual técnico documenta o design, a implementação e a análise do progr
 ##### Esta função implementa a busca em largura. 
 Começa com um nó inicial, expande os nós sucessores que não foram visitados anteriormente, e continua a busca até encontrar uma solução ou esgotar todos os nós possíveis.
 ```
-(defun bfs (no-inicial solucaop sucessores operadores &optional abertos fechados)
-  (cond
-   ((null no-inicial) nil)
-   ((funcall solucaop no-inicial) (list (cons no-inicial fechados) (length abertos) (length fechados) (/ (nth 1 no-inicial) (length abertos))))
-   (T (let* (
-         (fechados (cons no-inicial fechados))
-         (abertos (abertos-bfs abertos (remove nil (mapcar (lambda(x) (cond ((or (no-existep x fechados) (no-existep x abertos)) NIL) (T x))) (funcall sucessores no-inicial operadores 'bfs)))))
-         )
-      (bfs (car abertos) solucaop sucessores operadores (cdr abertos) fechados)))))
+(defun bfs (no-inicial solucaop sucessores operadores &optional (abertos nil) (fechados nil) inicio-tempo total-nos)
+  (let ((inicio-tempo (or inicio-tempo (get-internal-real-time)))
+        (total-nos (or total-nos 0)))
+    (cond
+     ((null no-inicial) nil)
+     ((funcall solucaop (car no-inicial)) (let ((tempo-final (get-internal-real-time)))
+                                      (list (car (cons no-inicial fechados)) (length abertos) (length fechados)
+                                            (cond 
+                                             ((or (zerop (length abertos)) (null (nth 1 no-inicial))) 0)
+                                             (t (/ (or (nth 1 no-inicial) 0) (length abertos))))
+                                            (cond 
+                                             ((zerop (length fechados)) 0)
+                                             (t (/ total-nos (length fechados))))
+                                            (cond 
+                                             ((null inicio-tempo) 0)
+                                             (t (- tempo-final inicio-tempo))))))
+     (t (let* ((fechados (cons no-inicial fechados))
+               (sucessores-no (remove nil (mapcar (lambda (x) (format t "XXXXXXXXXXXXXXX ~D " (car x)) (cond 
+                                                                              ((or (no-existep x fechados) 
+                                                                                   (no-existep x abertos)
+                                                                                   (null (car x)))
+                                                                               NIL) 
+                                                                              (T x)))
+                                                  (funcall sucessores no-inicial operadores 'bfs))))
+               (abertos (abertos-bfs abertos sucessores-no))
+               (total-nos (+ total-nos (length sucessores-no))))
+          (bfs (car abertos) solucaop sucessores operadores (cdr abertos) fechados inicio-tempo total-nos)))))
+)
 ```
+
+##### Esta função calcula a diferença de tempo em milissegundos entre dois momentos.
+```
+(defun time-difference-milliseconds (end start)
+  "Calcula a diferença de tempo em milisegundos."
+  (* (- end start) 100)
+)
+```
+
 ##### Esta função implementa a busca em profundidade.
 Inicia a busca a partir de um nó inicial, explorando até à profundidade passada em argumento ao longo de cada ramo antes de retroceder.
 ```
-(defun dfs (no-inicial solucaop sucessores operadores profundidade &optional abertos fechados)
-  (cond
-   ((null no-inicial) nil)
-   ((and (= (no-profundidade no-inicial) profundidade) (null abertos)) NIL)
-   ((funcall solucaop no-inicial) (list (cons no-inicial fechados) (length abertos) (length fechados) (/ (nth 1 no-inicial) (length abertos))))
-   (T (let* (
-         (fechados (cons no-inicial fechados))
-         (abertos (abertos-dfs abertos (remove nil (mapcar (lambda(x) (cond ((or (no-existep x fechados) (no-existep x abertos)) NIL) (T x))) (funcall sucessores no-inicial operadores 'dfs profundidade)))))
-         )
-      (dfs (car abertos) solucaop sucessores operadores profundidade (cdr abertos) fechados)))))
+(defun dfs (no-inicial solucaop sucessores operadores profundidade &optional abertos fechados inicio-tempo total-nos)
+  (let ((inicio-tempo (or inicio-tempo (get-internal-real-time)))
+        (total-nos (or total-nos 0)))
+    (cond
+     ((null no-inicial) nil)
+     ((and (= (no-profundidade no-inicial) profundidade) (null abertos)) nil)
+     ((funcall solucaop (car no-inicial))
+      (let ((tempo-final (get-internal-real-time)))
+        (list (cons no-inicial fechados) (length abertos) (length fechados) (cond 
+                                                                             ((or (zerop (length abertos)) (null (nth 1 no-inicial))) 0)
+                                                                             (t (/ (or (nth 1 no-inicial) 0) (length abertos))))
+              (cond 
+               ((zerop (length fechados)) 0)
+               (t (/ total-nos (length fechados))))
+              (cond 
+               ((null inicio-tempo) 0)
+               (t (- tempo-final inicio-tempo))))))
+     (t (let* ((fechados (cons no-inicial fechados))
+               (sucessores-no (remove nil (mapcar (lambda (x) (cond 
+                                                               ((or (no-existep x fechados) (no-existep x abertos)) NIL)
+                                                               (t x)))
+                                                  (funcall sucessores no-inicial operadores 'dfs profundidade))))
+               (abertos (abertos-dfs abertos sucessores-no))
+               (total-nos (+ total-nos (length sucessores-no))))
+          (dfs (car abertos) solucaop sucessores operadores profundidade (cdr abertos) fechados inicio-tempo total-nos))))))
 ```
 ##### Esta função implementa o algoritmo A*.
 É uma busca que utiliza uma função de custo que é a soma de um custo conhecido para alcançar o nó atual mais uma heurística que estima o custo de alcançar o objetivo a partir desse nó.
@@ -81,6 +124,23 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 (defun novo-sucessor(no op)
   (list (funcall op (car no)) (+ (no-profundidade no) 1) no))
 ```
+##### Similar a novo-sucessor, mas também calcula um valor heurístico para o novo nó.
+```
+(defun novo-sucessor-heuristica(no op heuristica)
+  (let ((sucessor (novo-sucessor no op)))
+        (list (no-estado sucessor) (no-profundidade sucessor) (calc-heuristica heuristica sucessor) (no-pai sucessor))
+  )
+)
+```
+##### Esta função gera todos os nós sucessores de um nó dado, com base em uma lista de operações. Se o algoritmo for A*, também inclui cálculos heurísticos.
+```
+(defun sucessores(no oplist algoritmo &optional maxprofundidade heuristica)
+  (cond ((and (equal algoritmo 'dfs) (= maxprofundidade (no-profundidade no))) NIL)
+        ((equal algoritmo 'astar) (mapcar #'(lambda(func) (novo-sucessor-heuristica no func heuristica)) oplist))
+        (T (mapcar #'(lambda(func) (novo-sucessor no func)) oplist))
+  )
+)
+```
 ##### Esta função retorna o estado atual de um nó.
 ```
 (defun no-estado(no)
@@ -103,8 +163,16 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 ```
 ##### Esta é função genérica que aplica um algoritmo de busca ao tabuleiro usando operadores especificados.
 ```
-(defun usar-algoritmo (tabuleiro algoritmo operadores)
-  (funcall algoritmo (list tabuleiro 0 0 nil) operadores)
+(defun usar-algoritmo (tabuleiro algoritmo &optional profundidade heuristica)
+  (cond
+   ((equal algoritmo 'dfs) (funcall algoritmo (cria-no tabuleiro) 'solucaop 'sucessores (operadores) profundidade))
+   ((equal algoritmo 'bfs) (funcall algoritmo (cria-no tabuleiro) 'solucaop 'sucessores (operadores)))
+   (t (funcall algoritmo (cria-no tabuleiro) 'solucaop 'sucessores (operadores) heuristica))))
+```
+##### Esta é função calcula o valor heurístico de um nó com base em uma função heurística fornecida.
+```
+(defun calc-heuristica (heuristica no)
+  (funcall heuristica (no-estado no))
 )
 ```
 #### Ficheiro Puzzle.lisp
@@ -123,7 +191,7 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 )
 ```
 
-##### Esta função calcula o número simétrico para um número dado numero.
+##### Esta função calcula o número simétrico para um número dado número.
 ```
 (defun numero-simetrico (numero)
   "Calcula o número simétrico."
@@ -149,7 +217,7 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 )
 ```
 
-##### Esta função verifica se um número numero é um duplo, de acordo com regras específicas do jogo.
+##### Esta função verifica se um número é um duplo, de acordo com regras específicas do jogo.
 ```
 (defun numero-duplo (numero)
   "Verifica se um número é um duplo"
@@ -169,10 +237,11 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 ```
 (defun aplicar-regra-simetrico-duplo (num estado)
   "Aplica a regra do número simétrico ou do duplo e retorna o estado completo."
-  (let ((novo-tabuleiro (cond
-                         ((numero-duplo num) (aplicar-regra-duplos (car estado)))
-                         (t (encontrar-posicao-numero (car estado) (numero-simetrico num))))))
-    (list novo-tabuleiro (nth 1 estado) (nth 2 estado))))
+  (cond
+   ((numero-duplo num) (list (aplicar-regra-duplos (car estado)) (nth 1 estado) (nth 2 estado)))
+   ((numero-simetrico num) (list (encontrar-posicao-numero (car estado) (numero-simetrico num)) (nth 1 estado) (nth 2 estado)))
+   (t estado))
+)
 ```
 
 ##### Esta função busca o maior número duplo disponível no tabuleiro.
@@ -201,10 +270,10 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 
 ##### Esta função verifica se a casa na posição (i, j) do tabuleiro está vazia.
 ```
-(defun casa-vazia (i j tabuleiro)
+(defun casa-vazia (l c tabuleiro)
   "Verifica se a casa na posição (i, j) do tabuleiro contém um número."
-  (let ((conteudo (nth j (nth i tabuleiro))))
-    (and conteudo (not (eql conteudo 'cavalo_branco)) (not (eql conteudo 'cavalo_preto)))
+  (let ((conteudo (celula l c tabuleiro)))
+    (not (null conteudo))
   )
 )
 ```
@@ -225,16 +294,20 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 (defun move-cavalo (i j estado &optional (cavalo 'T))
   "Move o cavalo no tabuleiro, aplicando as regras de movimentação."
   (let ((posicao-atual (posicao-cavalo (car estado) cavalo)))
-    (let* ((novo-i (+ (first posicao-atual) i))
+    (cond 
+     ((not (validacao-jogada i j (car estado))) nil)
+     ((not (valida-posicao i j)) nil)
+     (t (let* ((novo-i (+ (first posicao-atual) i))
            (novo-j (+ (second posicao-atual) j))
            (novo-numero (celula novo-i novo-j (car estado))))
       (cond 
-       ((validacao-jogada novo-i novo-j (car estado)) 
+       
+       ((validacao-jogada novo-i novo-j (car estado))
         (let ((tabuleiro-sem-cavalo (substituir (first posicao-atual) (second posicao-atual) (car estado) nil)))
           (let ((novo-estado (list (substituir novo-i novo-j tabuleiro-sem-cavalo cavalo) (adicionar-pontuacao novo-i novo-j estado) (nth 2 estado))))
             (aplicar-regra-simetrico-duplo novo-numero novo-estado))))
        (t nil)
-      ))))
+      ))))))
 ```
 
 ##### Esta função insere o cavalo em uma posição (i, j) no tabuleiro se a jogada for válida.
@@ -260,17 +333,33 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 ##### Esta função verifica se o estado atual é uma solução, comparando a pontuação acumulada com um valor de referência.
 ```
 (defun solucaop (estado)
-  (cond 
-   ((>= (nth 1 estado) (nth 2 estado)) t)
-   (t nil)))
+  (cond
+    ((null (car estado)) nil)
+    ((or (null (objetivo estado)) (null (pontuacao estado))) nil)
+    ((>= (nth 1 estado) (nth 2 estado))
+     (cond
+       ((> (length estado) 3)
+        (cond
+         ((>= (nth 1 (car estado)) (nth 2 (car estado))) t)
+         (t nil))
+        )
+       (t
+        (cond
+         ((>= (nth 1 estado) (nth 2 estado)) t)
+         (t nil))
+        )))
+    (t nil)))
 ```
 
-##### Esta função substitui o valor de uma célula (i, j) no tabuleiro com um novo valor valor.
+##### Esta função substitui o valor de uma célula (i, j) no tabuleiro com um novo valor.
 ```
 (defun substituir (i j tabuleiro &optional (valor nil))
-  (let ((linha (nth i tabuleiro)))
+  (cond 
+   ((validacao-jogada i j tabuleiro)
+    (let ((linha (nth i tabuleiro)))
     (let ((nova-linha (substituir-linha j linha valor)))
-      (substituir-linha i tabuleiro nova-linha)))
+      (substituir-linha i tabuleiro nova-linha))))
+   (t nil))
 )
 ```
 
@@ -345,7 +434,91 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 ##### Esta função retorna uma lista de operadores de movimento do cavalo a serem utilizados pelos algoritmos de busca.
 ```
 (defun operadores()
-  (list 'move-cavalo_1_2 'move-cavalo_1-2 'move-cavalo-1_2 'move-cavalo-1-2 'move-cavalo_2-1 'move-cavalo-2_1 'move-cavalo-2-1))
+  (list 'move-cavalo-2-1 'move-cavalo-2_1 'move-cavalo-1-2 'move-cavalo-1_2 'move-cavalo_1-2 'move-cavalo_1_2 'move-cavalo_2-1 'move-cavalo_2_1)
+)
+```
+
+##### Esta função conta o número de elementos numéricos em uma lista. Ela ignora elementos que não são números.
+```
+(defun contar-espacos-lista (lista)
+  (cond 
+   ((null lista) 0)
+   ((not (numberp (car lista))) 0)
+   (t (+ 1 (contar-espacos-lista (cdr lista))))
+   )
+)
+```
+
+##### Esta função conta o total de elementos numéricos em uma "tabela". Ela usa contar-espacos-lista para contar os elementos numéricos em cada lista interna e depois soma esses totais.
+```
+(defun contar-espacos-tabela (tabela)
+  (cond
+   ((null tabela) 0)
+   (t (apply #'+ (mapcar 'contar-espacos-lista tabela)))
+   )
+)
+```
+
+##### Esta função calcula a soma dos elementos numéricos de uma lista. Assim como contar-espacos-lista, ignora elementos que não são números.
+```
+(defun media-espacos-lista (lista)
+  (cond 
+   ((null lista) 0)
+   ((not (numberp (car lista))) 0)
+   (t (+ (car lista) (media-espacos-lista (cdr lista))))
+   )
+)
+```
+
+##### Esta função calcula a média dos elementos numéricos em uma tabela. Soma todos os elementos numéricos de todas as listas internas e divide pelo número total de elementos numéricos.
+```
+(defun media-espacos-tabela (tabela)
+  (cond
+   ((null tabela) 0)
+   (t (/ (apply #'+ (mapcar 'media-espacos-lista tabela)) (contar-espacos-tabela tabela)))
+   )
+)
+```
+
+##### Esta função corresponde à heuristica default.
+```
+(defun heuristica-default (estado)
+  (cond
+   ((or (null (nth 2 estado)) (null (nth 1 estado)) (null (nth 0 estado))) 0)
+   (t (/ (- (nth 2 estado) (nth 1 estado)) (media-espacos-tabela (nth 0 estado))))
+   )
+)
+```
+
+##### Esta função conta o número de elementos nil em uma lista.
+```
+(defun contar-null-lista (lista)
+  (cond 
+   ((null lista) 0)
+   ((not (null (car lista))) 0)
+   (t (+ 1 (contar-espacos-lista (cdr lista))))
+   )
+)
+```
+
+##### Esta função similar a contar-espacos-tabela, mas conta o número de elementos nil em uma tabela.
+```
+(defun contar-null-tabela (tabela)
+  (cond
+   ((null tabela) 0)
+   (t (apply #'+ (mapcar 'contar-null-lista tabela)))
+   )
+)
+```
+
+##### Esta função é outra heurística que calcula um valor baseado na proporção de espaços em uma tabela e no número de elementos nil na tabela.
+```
+(defun heuristica-novo (estado)
+  (cond
+   ((or (null estado) (null (nth 2 estado)) (null (nth 1 estado)) (null (nth 0 estado))) 99999999)
+   (t (* (/ (contar-espacos-tabela (car estado))  100) (contar-null-tabela (car estado))))
+   )
+)
 ```
 
 #### Ficheiro Projeto.lisp
@@ -436,12 +609,13 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 ```
 (defun processar-escolha (resultado)
   (cond
-   (resultado (format t "Tabuleiro atual: ~%")
-              (imprimir-tabuleiro (cdr resultado))
-              (iniciar-jogo resultado))
-   (t (format t "Não foi possível encontrar o problema escolhido. Tente novamente.") nil)
-  )
-)
+   (resultado 
+    (format t "Tabuleiro atual: ~%")
+    (imprimir-tabuleiro (cdr resultado))
+    (format t "Qual é o resultado máximo esperado?: ~%")
+    (let ((resultado-esperado (read)))
+      (iniciar-jogo (list (cdr resultado) '0 resultado-esperado))))
+   (t (format t "Não foi possível encontrar o problema escolhido. Tente novamente.") nil)))
 ```
 
 ##### Esta função lista os problemas disponíveis para o utilizador escolher.
@@ -482,12 +656,14 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
   "Inicia o jogo, permitindo ao usuário escolher a localização inicial do cavalo."
   (let* ((tabuleiro (escolher-problema))
          (algoritmo (ler-algoritmo))
-         (profundidade (cond 
-                         ((eql algoritmo 'dfs) (ler-profundidade))
-                         (T 9999)))
-         (solucao (usar-algoritmo tabuleiro algoritmo (operadores))))
-    (imprimir-tabuleiro (caar solucao)))
-)
+         (heuristica (cond
+                       ((eql algoritmo 'astar) (ler-heuristica))
+                       (t 'heuristica-default)))
+         (profundidade (cond
+                        ((eql algoritmo 'dfs) (ler-profundidade))
+                        (t 0)))
+         (solucao (usar-algoritmo tabuleiro algoritmo profundidade heuristica)))
+    (imprimir-tabuleiro (caar solucao))))
 ```
 
 ##### Esta função pede ao utilizador para escolher um algoritmo de busca.
@@ -507,6 +683,19 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
        (T 'astar)
       )))
 )
+```
+
+##### Esta função pede ao utilizador para escolher a heurística a utilizar no A*.
+
+```
+(defun ler-heuristica ()
+  "Permite fazer a leitura da heuristica a utilizar."
+  (format t "Que heuristica pretende utilizar? ~%")
+  (format t "1- Heuristica default ~%")
+  (format t "2- Heuristica nova ~%")
+  (let ((resposta (read)))  ; Declara resposta como uma variável local com let
+    (cond ((= resposta 1) 'heuristica-default)
+          (t 'heuristica-nova))))
 ```
 
 ##### Esta função pede ao utilizador a profundidade limite para o algoritmo de busca em profundidade.
@@ -561,28 +750,21 @@ A estrutura de dados utilizada foi as listas. Por exemplo, ler-problemas-aux cri
 Para este projeto foi apenas implementado a heurística A*, é uma parte crucial que determina a eficiência e eficácia do algoritmo na busca de soluções. 
 A heurística é uma função que estima o custo mais baixo do nó atual até o nó objetivo. Tenta prever o caminho mais curto ou custo mínimo para alcançar o objetivo a partir de um determinado ponto. 
 
-Caracteristicas:
+Características:
 - Estimativa de Custo para o Objetivo (h(n)): A função heurística h(n) estima o custo de ir do nó n até o nó objetivo. Esta estimativa deve ser tão precisa quanto possível para que o A* funcione de forma eficiente.
 - Admissibilidade: Uma heurística é dita admissível se nunca superestima o custo real de alcançar o objetivo.
 - Consistência: Uma heurística é consistente se, para cada nó n e cada sucessor n' de n, o custo estimado de chegar ao objetivo a partir de n não é maior que o custo de ir de n para n' mais o custo estimado de chegar ao objetivo a partir de n'.
 
 ## Limitações e Opções Técnicas
-Identifique qualquer limitação encontrada durante o desenvolvimento e as escolhas técnicas feitas para contorná-las.
+Houve um número elevado de limitações durante o desenvolvimento do programa, como por exemplo o desenvolvimento de BFS e DFS, o A* não houve muitas dificuldades. Para tentar ultrapassar o maior número de limitações possíveis foi utilizado a pesquisa na internet, analisar os laboratórios que foram realizados nas aulas práticas e como último recurso foram feitos pedidos de ajuda ao professor de laboratório.
+Nenhum dos algoritmos ficaram 100% funcionais, foram desenvolvidos sempre com um caso de teste, quando conseguimos resolver esse tabuleiro, passamos a testar com os problemas propostos, aì foi onde os problemas maiores começaram a aparecer. Devido à limitação de tempo, não conseguimos descobrir o motivo dos erros e resolvê-los
 
 ## Análise Crítica dos Resultados
-Analise o desempenho do programa, discutindo casos de teste, resultados esperados versus resultados obtidos e quaisquer discrepâncias.
-
-## Análise Comparativa
-Compare o desempenho dos diferentes algoritmos e heurísticas. Utilize tabelas e gráficos para ilustrar os resultados.
-
-| Algoritmo | Problema | Resultado | Tempo de Execução |
-|-----------|----------|-----------|-------------------|
-| BFS       | Problema 1 | X Pontos | YYs              |
-| DFS       | Problema 1 | X Pontos | YYs              |
-| A*        | Problema 1 | X Pontos | YYs              |
+Nenhum dos algoritmos conseguiram correr os problemas propostos, então não foi possível meter a funcionar corretamente, logo não foi possível efetuar uma comparação dos dados obtidos para se poder fazer análise critica dos resultados.
 
 ## Requisitos Não Implementados
-Liste os requisitos do projeto original que não foram implementados e explique o porquê.
+O nenhum dos algoritmos ficaram totalmente a funcionar, não foi possível conseguir perceber o motivo de não conseguirmos avançar para a segunda iteração no caso do bfs e dfs.
+Não foi implementado mais nenhum algoritmo (referente ao bónus).
 
 ## Conclusão
 
@@ -590,7 +772,7 @@ Este projeto representou uma exploração profunda e prática dos algoritmos de 
 
 Principais conhecimentos novos e realizações:
 - Flexibilidade dos Algoritmos de Busca: O projeto demonstrou como diferentes algoritmos podem ser adaptados e aplicados a um problema específico. Cada algoritmo apresentou suas características únicas em termos de eficiência, profundidade de busca e capacidade de encontrar a solução ótima.
-- Importância das Heurísticas no A*: A implementação do A* destacou a importância crucial de uma heurística bem projetada. Foi observado que a eficiência do A* depende fortemente da qualidade da heurística usada, ressaltando o equilíbrio entre admissibilidade e informatividade.
+- Importância das Heurísticas no A*: A implementação do A* destacou a importância crucial de uma heurística bem projetada. Foi observado que a eficiência do A* depende fortemente da qualidade da heurística usada, ressaltando o equilíbrio entre admissibilidade e disponibilidade de informação.
 - Desafios de Espaço e Tempo: Ficou evidente que a complexidade tanto em espaço quanto em tempo é um fator significativo nos algoritmos de busca. Enquanto o DFS mostrou-se mais eficiente em termos de espaço, o BFS e o A* foram mais eficazes em encontrar soluções completas, embora com maior consumo de memória.
 - Representação do Problema: A representação do tabuleiro e dos movimentos do cavalo em listas provou ser eficaz, permitindo a manipulação e avaliação dos estados do jogo de maneira intuitiva e flexível.
 - Conhecimentos sobre IA e Resolução de Problemas: O projeto foi uma oportunidade valiosa para entender melhor como a Inteligência Artificial pode ser aplicada na resolução de problemas complexos, não apenas em jogos, mas em uma variedade de contextos onde a procura e a otimização são necessárias.
