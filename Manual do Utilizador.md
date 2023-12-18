@@ -5,7 +5,7 @@
 Objetivos do Programa
 
 O programa desenvolvido tem como principais objetivos:
-1. Resolver problemas do passeio do Cavalo  - O cavalo apenas se pode movimentar em L, um tabuleiro tem o tamanho de 10x10, onde cada casa possui uma pontiação associada.
+1. Resolver problemas do passeio do Cavalo - O cavalo apenas se pode movimentar em L, um tabuleiro tem o tamanho de 10x10, onde cada casa possui uma pontuação associada.
 2. Maximizar a Pontuação - Encontrar uma sequência de movimentos que permita ao cavalo acumular o maior número de pontos possível, seguindo as regras específicas do jogo.
 3. Regras específicas do jogo:
   - Número simétricos, em cada jogada é removido do tabuleiro a opção de jogada a posição do tabuleiro que contem o número simétrico.
@@ -25,7 +25,7 @@ O programa foi desenhado com uma ênfase na clareza e na facilidade de uso, gara
 
 ## Como Usar
 
-Para iniciar o jogo é necessáriu apenas inserir o comando "(iniciar)"
+Para iniciar o jogo é necessário apenas inserir o comando "(iniciar)"
 
 ![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/85de5621-11f8-4994-a1ec-3d2fc1ef3dec)
 
