@@ -10,7 +10,7 @@ Este manual técnico documenta o design, a implementação e a análise do progr
 ##### Esta função implementa a busca em largura. 
 Começa com um nó inicial, expande os nós sucessores que não foram visitados anteriormente, e continua a busca até encontrar uma solução ou esgotar todos os nós possíveis.
 ```
-(defun bfs (no-inicial solucaop sucessores operadores &optional (abertos nil) (fechados nil) inicio-tempo total-nos)
+(defun bfs (no-inicial solucaop sucessores operadores &optional abertos fechados inicio-tempo total-nos)
   (let ((inicio-tempo (or inicio-tempo (get-internal-real-time)))
         (total-nos (or total-nos 0)))
     (cond
@@ -25,14 +25,12 @@ Começa com um nó inicial, expande os nós sucessores que não foram visitados 
                                              (t (/ total-nos (length fechados))))
                                             (cond 
                                              ((null inicio-tempo) 0)
-                                             (t (- tempo-final inicio-tempo))))))
+                                             (t (time-difference-milliseconds tempo-final inicio-tempo))))))
      (t (let* ((fechados (cons no-inicial fechados))
-               (sucessores-no (remove nil (mapcar (lambda (x) (format t "XXXXXXXXXXXXXXX ~D " (car x)) (cond 
-                                                                              ((or (no-existep x fechados) 
-                                                                                   (no-existep x abertos)
-                                                                                   (null (car x)))
-                                                                               NIL) 
-                                                                              (T x)))
+               (sucessores-no (remove nil (mapcar (lambda (x) (cond 
+                                                               ((or (no-existep x fechados) (no-existep x abertos)) NIL)
+                                                               ((null (car x)) NIL)
+                                                               (t x)))
                                                   (funcall sucessores no-inicial operadores 'bfs))))
                (abertos (abertos-bfs abertos sucessores-no))
                (total-nos (+ total-nos (length sucessores-no))))
@@ -57,20 +55,21 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
     (cond
      ((null no-inicial) nil)
      ((and (= (no-profundidade no-inicial) profundidade) (null abertos)) nil)
-     ((funcall solucaop (car no-inicial))
-      (let ((tempo-final (get-internal-real-time)))
-        (list (cons no-inicial fechados) (length abertos) (length fechados) (cond 
-                                                                             ((or (zerop (length abertos)) (null (nth 1 no-inicial))) 0)
-                                                                             (t (/ (or (nth 1 no-inicial) 0) (length abertos))))
-              (cond 
-               ((zerop (length fechados)) 0)
-               (t (/ total-nos (length fechados))))
-              (cond 
-               ((null inicio-tempo) 0)
-               (t (- tempo-final inicio-tempo))))))
+     ((funcall solucaop (car no-inicial)) (let ((tempo-final (get-internal-real-time)))
+                                      (list (car (cons no-inicial fechados)) (length abertos) (length fechados)
+                                            (cond 
+                                             ((or (zerop (length abertos)) (null (nth 1 no-inicial))) 0)
+                                             (t (/ (or (nth 1 no-inicial) 0) (length abertos))))
+                                            (cond 
+                                             ((zerop (length fechados)) 0)
+                                             (t (/ total-nos (length fechados))))
+                                            (cond 
+                                             ((null inicio-tempo) 0)
+                                             (t (time-difference-milliseconds tempo-final inicio-tempo))))))
      (t (let* ((fechados (cons no-inicial fechados))
                (sucessores-no (remove nil (mapcar (lambda (x) (cond 
                                                                ((or (no-existep x fechados) (no-existep x abertos)) NIL)
+                                                               ((null (car x)) NIL)
                                                                (t x)))
                                                   (funcall sucessores no-inicial operadores 'dfs profundidade))))
                (abertos (abertos-dfs abertos sucessores-no))
@@ -80,14 +79,22 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 ##### Esta função implementa o algoritmo A*.
 É uma busca que utiliza uma função de custo que é a soma de um custo conhecido para alcançar o nó atual mais uma heurística que estima o custo de alcançar o objetivo a partir desse nó.
 ```
-(defun astar (no-inicial solucaop sucessores operadores &optional abertos fechados)
+(defun astar (no-inicial solucaop sucessores operadores heuristica &optional abertos fechados inicio-tempo total-nos)
+  (let ((inicio-tempo (or inicio-tempo (get-internal-real-time)))
+        (total-nos (or total-nos 0)))
   (cond 
-   ((null no-inicial) nil)
-   ((funcall solucaop no-inicial) (list fechados (length abertos) (length fechados) (/ (nth 1 no-inicial) (length abertos))))
-   (t (let* (
-         (fechados (cons no-inicial fechados))
-         (abertos (abertos-astar abertos (remove nil (mapcar (lambda(x) (cond ((or (no-existep x fechados) (no-existep x abertos)) NIL) (T x))) (funcall sucessores no-inicial operadores 'a-star))))))
-        (astar (car abertos) solucaop sucessores operadores (cdr abertos) fechados)))))
+   ((null no-inicial) (format t "no null"))
+   ((funcall solucaop (car no-inicial)) (format t "yep"))
+     (t (let* ((fechados (cons no-inicial fechados))
+               (sucessores-no (remove nil (mapcar (lambda (x) (cond 
+                                                               ((or (no-existep x fechados) (no-existep x abertos)) NIL)
+                                                               ((null (car x)) NIL)
+                                                               (t x)))
+                                                  (sucessores-validos (funcall sucessores no-inicial operadores 'astar heuristica)))))
+               (abertos (abertos-astar abertos sucessores-no))
+               (total-nos (+ total-nos (length sucessores-no))))
+          (astar (car abertos) solucaop sucessores operadores heuristica (cdr abertos) fechados inicio-tempo total-nos)))))
+)
 ```
 ##### Esta função gera e retorna a lista de nós abertos para a busca em largura, anexando novos sucessores à lista de abertos.
 ```
@@ -112,7 +119,7 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 ##### Esta função calcula o custo total de um nó, que é usado no algoritmo A* para ordenar os nós.
 ```
 (defun no-custo (no)
-  (+ (heuristica no) (no-profundidade no)))
+  (+ (nth 1 no) (nth 2 no)))
 ```
 ##### Esta função faz a comparação que determina a ordem dos nós na lista de abertos para o A* com base em seus custos totais.
 ```
@@ -122,13 +129,13 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 ##### Esta função gera um novo nó sucessor aplicando um operador ao estado do nó.
 ```
 (defun novo-sucessor(no op)
-  (list (funcall op (car no)) (+ (no-profundidade no) 1) no))
+  (list (funcall op (car no)) (+ (no-profundidade no) 1) '0 no))
 ```
 ##### Similar a novo-sucessor, mas também calcula um valor heurístico para o novo nó.
 ```
 (defun novo-sucessor-heuristica(no op heuristica)
   (let ((sucessor (novo-sucessor no op)))
-        (list (no-estado sucessor) (no-profundidade sucessor) (calc-heuristica heuristica sucessor) (no-pai sucessor))
+        (list (no-estado sucessor) (no-profundidade sucessor) (funcall heuristica (no-estado no)) (no-pai sucessor))
   )
 )
 ```
@@ -161,14 +168,27 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 (defun no-pai (no)
   (caddr no))
 ```
-##### Esta é função genérica que aplica um algoritmo de busca ao tabuleiro usando operadores especificados.
+
+##### Esta função é outra heurística que calcula um valor baseado na proporção de espaços em uma tabela e no número de elementos nil na tabela.
 ```
-(defun usar-algoritmo (tabuleiro algoritmo &optional profundidade heuristica)
+(defun heuristica-novo (estado)
   (cond
-   ((equal algoritmo 'dfs) (funcall algoritmo (cria-no tabuleiro) 'solucaop 'sucessores (operadores) profundidade))
-   ((equal algoritmo 'bfs) (funcall algoritmo (cria-no tabuleiro) 'solucaop 'sucessores (operadores)))
-   (t (funcall algoritmo (cria-no tabuleiro) 'solucaop 'sucessores (operadores) heuristica))))
+   ((or (null estado) (null (nth 2 estado)) (null (nth 1 estado)) (null (nth 0 estado))) 99999999)
+   (t (* (/ (contar-espacos-tabela (car estado))  100) (contar-null-tabela (car estado))))
+   )
+)
 ```
+
+##### Esta função corresponde à heuristica default.
+```
+(defun heuristica-default (estado)
+  (cond
+   ((or (null (nth 2 estado)) (null (nth 1 estado)) (null (nth 0 estado))) 0)
+   (t (/ (- (nth 2 estado) (nth 1 estado)) (media-espacos-tabela (nth 0 estado))))
+   )
+)
+```
+
 ##### Esta é função calcula o valor heurístico de um nó com base em uma função heurística fornecida.
 ```
 (defun calc-heuristica (heuristica no)
@@ -271,10 +291,8 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 ##### Esta função verifica se a casa na posição (i, j) do tabuleiro está vazia.
 ```
 (defun casa-vazia (l c tabuleiro)
-  "Verifica se a casa na posição (i, j) do tabuleiro contém um número."
-  (let ((conteudo (celula l c tabuleiro)))
-    (not (null conteudo))
-  )
+  "Verifica se a casa na posição (l, c) do tabuleiro contém um número."
+  (numberp (celula l c tabuleiro))
 )
 ```
 
@@ -295,19 +313,17 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
   "Move o cavalo no tabuleiro, aplicando as regras de movimentação."
   (let ((posicao-atual (posicao-cavalo (car estado) cavalo)))
     (cond 
-     ((not (validacao-jogada i j (car estado))) nil)
-     ((not (valida-posicao i j)) nil)
+     ((null posicao-atual) nil)
      (t (let* ((novo-i (+ (first posicao-atual) i))
-           (novo-j (+ (second posicao-atual) j))
-           (novo-numero (celula novo-i novo-j (car estado))))
-      (cond 
-       
-       ((validacao-jogada novo-i novo-j (car estado))
-        (let ((tabuleiro-sem-cavalo (substituir (first posicao-atual) (second posicao-atual) (car estado) nil)))
-          (let ((novo-estado (list (substituir novo-i novo-j tabuleiro-sem-cavalo cavalo) (adicionar-pontuacao novo-i novo-j estado) (nth 2 estado))))
-            (aplicar-regra-simetrico-duplo novo-numero novo-estado))))
-       (t nil)
-      ))))))
+               (novo-j (+ (second posicao-atual) j)))
+          (cond 
+           ((validacao-jogada novo-i novo-j (car estado))
+            (let ((novo-numero (celula novo-i novo-j (car estado)))
+                  (tabuleiro-sem-cavalo (substituir (first posicao-atual) (second posicao-atual) (car estado) nil)))
+              (let ((novo-estado (list (substituir novo-i novo-j tabuleiro-sem-cavalo cavalo) (adicionar-pontuacao novo-i novo-j estado) (nth 2 estado))))
+                (aplicar-regra-simetrico-duplo novo-numero novo-estado))))
+           (t nil)
+           ))))))
 ```
 
 ##### Esta função insere o cavalo em uma posição (i, j) no tabuleiro se a jogada for válida.
@@ -336,8 +352,7 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
   (cond
     ((null (car estado)) nil)
     ((or (null (objetivo estado)) (null (pontuacao estado))) nil)
-    ((>= (nth 1 estado) (nth 2 estado))
-     (cond
+    ((cond
        ((> (length estado) 3)
         (cond
          ((>= (nth 1 (car estado)) (nth 2 (car estado))) t)
@@ -354,13 +369,9 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 ##### Esta função substitui o valor de uma célula (i, j) no tabuleiro com um novo valor.
 ```
 (defun substituir (i j tabuleiro &optional (valor nil))
-  (cond 
-   ((validacao-jogada i j tabuleiro)
     (let ((linha (nth i tabuleiro)))
     (let ((nova-linha (substituir-linha j linha valor)))
       (substituir-linha i tabuleiro nova-linha))))
-   (t nil))
-)
 ```
 
 ##### Esta função é auxiliar de substituir, atualiza uma linha do tabuleiro com uma nova linha nova-linha.
@@ -480,16 +491,6 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 )
 ```
 
-##### Esta função corresponde à heuristica default.
-```
-(defun heuristica-default (estado)
-  (cond
-   ((or (null (nth 2 estado)) (null (nth 1 estado)) (null (nth 0 estado))) 0)
-   (t (/ (- (nth 2 estado) (nth 1 estado)) (media-espacos-tabela (nth 0 estado))))
-   )
-)
-```
-
 ##### Esta função conta o número de elementos nil em uma lista.
 ```
 (defun contar-null-lista (lista)
@@ -511,14 +512,13 @@ Inicia a busca a partir de um nó inicial, explorando até à profundidade passa
 )
 ```
 
-##### Esta função é outra heurística que calcula um valor baseado na proporção de espaços em uma tabela e no número de elementos nil na tabela.
+##### Esta é função genérica que aplica um algoritmo de busca ao tabuleiro usando operadores especificados.
 ```
-(defun heuristica-novo (estado)
+(defun usar-algoritmo (tabuleiro algoritmo &optional profundidade heuristica)
   (cond
-   ((or (null estado) (null (nth 2 estado)) (null (nth 1 estado)) (null (nth 0 estado))) 99999999)
-   (t (* (/ (contar-espacos-tabela (car estado))  100) (contar-null-tabela (car estado))))
-   )
-)
+   ((equal algoritmo 'dfs) (funcall algoritmo (cria-no tabuleiro) 'solucaop 'sucessores (operadores) profundidade))
+   ((equal algoritmo 'bfs) (funcall algoritmo (cria-no tabuleiro) 'solucaop 'sucessores (operadores)))
+   (t (funcall algoritmo (cria-no tabuleiro) 'solucaop 'sucessores (operadores) heuristica))))
 ```
 
 #### Ficheiro Projeto.lisp
@@ -760,10 +760,32 @@ Houve um número elevado de limitações durante o desenvolvimento do programa, 
 Nenhum dos algoritmos ficaram 100% funcionais, foram desenvolvidos sempre com um caso de teste, quando conseguimos resolver esse tabuleiro, passamos a testar com os problemas propostos, aì foi onde os problemas maiores começaram a aparecer. Devido à limitação de tempo, não conseguimos descobrir o motivo dos erros e resolvê-los
 
 ## Análise Crítica dos Resultados
-Nenhum dos algoritmos conseguiram correr os problemas propostos, então não foi possível meter a funcionar corretamente, logo não foi possível efetuar uma comparação dos dados obtidos para se poder fazer análise critica dos resultados.
+O algoritmo BFS conseguiu em todos os casos de teste bem succedidos, foi mais rápido que o DFS, mesmo que em alguns casos o DFS tenha gerado menos nós. Logo, pelos dados que conseguimos obter o BFS foi mais eficiente que o DFS, conseguindo encontrar a melhor solução mais rápido. Não foi possivel fazer uma análise mais extensiva porque não conseguimos resolver os problemas E e F, e não conseguimos meter o algoritmo A* a funcionar.
+
+| Algoritmo | Problema | Tempo (Milisegundos) | Nós gerados |
+|-----------|----------|----------------------|-------------|
+| BFS | A | 1 | 2 |
+| BFS | B | 1 | 9 |
+| BFS | C | 1.07 | 15 |
+| BFS | D | 1 | 37 |
+| BFS | E | NIL | NIL |
+| BFS | F | NIL | NIL |
+| DFS | A | 1 | 2 |
+| DFS | B | 1 | 9 |
+| DFS | C | 1.15 | 13 |
+| DFS | D | 1.29 | 14 |
+| DFS | E | NIL | NIL |
+| DFS | F | NIL | NIL |
+| A* | A | NIL | NIL |
+| A* | B | NIL | NIL |
+| A* | C | NIL | NIL |
+| A* | D | NIL | NIL |
+| A* | E | NIL | NIL |
+| A* | F | NIL | NIL |
 
 ## Requisitos Não Implementados
-O nenhum dos algoritmos ficaram totalmente a funcionar, não foi possível conseguir perceber o motivo de não conseguirmos avançar para a segunda iteração no caso do bfs e dfs.
+Os algoritmos DFS e BFS não conseguiram em nenhum dos testes efetuados conseguir resolver o problema.
+Não conseguimos meter o algoritmo A* a funcionar corretamente, devido a stack overflow.
 Não foi implementado mais nenhum algoritmo (referente ao bónus).
 
 ## Conclusão
