@@ -757,7 +757,8 @@ Características:
 
 ## Limitações e Opções Técnicas
 Houve um número elevado de limitações durante o desenvolvimento do programa, como por exemplo o desenvolvimento de BFS e DFS, o A* não houve muitas dificuldades. Para tentar ultrapassar o maior número de limitações possíveis foi utilizado a pesquisa na internet, analisar os laboratórios que foram realizados nas aulas práticas e como último recurso foram feitos pedidos de ajuda ao professor de laboratório.
-Nenhum dos algoritmos ficaram 100% funcionais, foram desenvolvidos sempre com um caso de teste, quando conseguimos resolver esse tabuleiro, passamos a testar com os problemas propostos, aì foi onde os problemas maiores começaram a aparecer. Devido à limitação de tempo, não conseguimos descobrir o motivo dos erros e resolvê-los
+O algoritmo A* não ficou funcional. Devido à limitação de tempo, não conseguimos descobrir o motivo dos erros e resolvê-los.
+Os algoritmos BFS e DFS estão a funcionar, mas quando se faz pelos comandos a partir do menu de iteração com o utilizador ele percorre o tabuleiro mas depois dá erro.
 
 ## Análise Crítica dos Resultados
 O algoritmo BFS conseguiu em todos os casos de teste bem succedidos, foi mais rápido que o DFS, mesmo que em alguns casos o DFS tenha gerado menos nós. Logo, pelos dados que conseguimos obter o BFS foi mais eficiente que o DFS, conseguindo encontrar a melhor solução mais rápido. Não foi possivel fazer uma análise mais extensiva porque não conseguimos resolver os problemas E e F, e não conseguimos meter o algoritmo A* a funcionar.
