@@ -5,13 +5,10 @@
 Objetivos do Programa
 
 O programa desenvolvido tem como principais objetivos:
-1. Resolver problemas do passeio do Cavalo - O cavalo apenas se pode movimentar em L, um tabuleiro tem o tamanho de 10x10, onde cada casa possui uma pontuação associada.
-2. Maximizar a Pontuação - Encontrar uma sequência de movimentos que permita ao cavalo acumular o maior número de pontos possível, seguindo as regras específicas do jogo.
-3. Regras específicas do jogo:
-  - Número simétricos, em cada jogada é removido do tabuleiro a opção de jogada a posição do tabuleiro que contem o número simétrico.
-  - Número Duplo, se a pontuação da casa em que o cavalo calhou fôr um número duplo (por exemplo 55) é removido do tabuleiro o número duplo de maior valor existente.
-4. Algoritmos de Procura: Utilizar e avaliar diferentes algoritmos de procura, tais como Busca em Largura (BFS), Busca em Profundidade (DFS) e A*, para determinar qual oferece o melhor desempenho em termos de eficiência e eficácia na resolução de problemas.
-
+1. Implementar o algoritmo alfaBeta, é uma estratégia de decisão em jogos de dois jogadores. Este algoritmo é crucial para criar um adversário automatizado desafiador, capaz de tomar decisões estratégicas inteligentes durante o jogo.
+2. Permitir jogos em dois modos diferentes, Humano vs Computador e Computador vs Computador. No primeiro modo, um jogador humano compete contra o computador, e no segundo, o programa permite que dois computadores joguem entre si. Isso proporciona não só um desafio para os jogadores humanos mas também uma plataforma para testar e avaliar a eficácia das estratégias de IA implementadas.
+3. Proporcionar uma experiência de jogo desafiadora e educativa, mas também uma oportunidade de aprendizado sobre algoritmos de inteligência artificial e estratégias de jogo.
+   
 ## Funcionamento Geral
 
 O programa é uma implementação computacional avançada destinada a resolver uma variante desafiadora do problema do Passeio do Cavalo, um clássico da teoria dos jogos e da inteligência artificial. Neste problema, o cavalo do xadrez deve visitar cada casa de um tabuleiro de xadrez 10x10 exatamente uma vez, seguindo as regras tradicionais de movimento dos cavalos no xadrez.
@@ -25,26 +22,40 @@ O programa foi desenhado com uma ênfase na clareza e na facilidade de uso, gara
 
 ## Como Usar
 
-Para iniciar o jogo é necessário apenas inserir o comando "(iniciar)"
+Para iniciar o jogo é necessário apenas inserir o comando "(configurar-partida)"
 
-![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/85de5621-11f8-4994-a1ec-3d2fc1ef3dec)
+![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/cc3c0a0d-f551-47a3-a3cd-e31e58d815a7)
 
-Ao inserir o comando é perguntado a localização do ficheiro problems.bat (ficheiro esse que contem todos os problemas a resolver).
+Ao inserir o comando é apresentado no ecrã as duas possibilidades de jogo.
+Deverá escrever 1 ou 2 dependendo da escolha que pretender.
 
-![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/17c522ae-6809-4e4b-acdc-76fef453f56b)
+![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/9fc8270c-90e6-4111-8152-42b39cb65adc)
 
-Para inserir a localização do ficheiro problemas.bat é com o seguinte comando "C:/Users/[Utilizador]/Localização/ficheiro/problemas.bat"
+Ao inserir a escolha é apresentado uma mensagem para introduzir o tempo limite que o computador tem para jogar.
+Inserir um numero entre 1000 a 5000, que corresponde ao tempo em milissegundos.
 
-![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/526891c3-a3b2-483b-9849-437c349ed58c)
+![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/a8a78af2-0920-4a73-a695-f999f20cee69)
 
-Ao inserir a localização e supondo que correu tudo bem, é questionado qual o problema que deseja solucionar.
+De seguida é apresentado no ecrã a perguntar quem pretende que começe a jogar.
+Deverá escrever 1 ou 2 dependendo da sua escolha.
 
-![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/ff368a66-70f7-4acf-b9d6-8a6c5b2fb497)
+![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/6622d953-9f48-43cf-b335-6cbb9bedea87)
 
-Ao inserir a letra correspondente, é apresentado uma mensagem a identificar qual o problema escolhido e logo de seguida é apresentado o tabuleiro e uma mensagem para escolher qual casa da 1ª linha pretende posicionar o cavalo.
+Agora o jogo já começou!
+É apresentado no ecrã o estádo atual do tabuleiro e as jogadas disponiveis que tem para jogar, essa lista de jogadas apenas aparece na vez do humano jogar.
+Escreva o numero da jogada que pretender, por exemplo, das opções da imagem, para selecionar a jogada (2, 1), que move o cavalo duas linhas para baixo e uma coluna para o lado direiro, tem de escrever 1.
+No tabuleiro o jogador 1 é representado como -1, e o jogador 2 como -2.
 
-![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/63226967-7eaa-480f-b827-8d62f2f8a99e)
+![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/2f8e3d61-37cc-4533-9c42-5f5f53c7eef3)
 
-Depois de selecionar qual casa pretende posicionar o cavalo, é apresentado o tabuleiro atualizado com o cavalo e pergunta qual algoritmo pretende utilizar para solucionar o problema.
+Depois de selecionar a jogada, o jogador computador, faz a jogada dele, como poderá observar na proxima imagem, que o jogador 2 já moveu o cavalo
 
-![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/758dfba9-6abe-4459-9070-c05507277c91)
+![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/919754c3-4d76-4819-8593-4e25e23b993d)
+
+O processo se repete até que nenhum dos jogadores se consigam movimentar mais, e quando isso acontece e mostrado uma mensagem a dizer qual foi o jogador que ganhou e a respetiva pontuação.
+
+![Sem título](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/b80f4be7-7739-4d41-a090-e8c513ec1a2d)
+
+Para o modo de jogo Computador vs Computado, quando começar o jogo neste modo, terá que esperar um pouco e quando terminarem o jogo é apresentado a mensagem de quem ganhou.
+
+![image](https://github.com/TiagoRodrigues201400314/Manual-de-Utilizador/assets/100838766/c29911fe-cb95-466d-94b6-b63598e69104)
