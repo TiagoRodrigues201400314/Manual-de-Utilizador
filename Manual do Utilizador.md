@@ -11,14 +11,14 @@ O programa desenvolvido tem como principais objetivos:
    
 ## Funcionamento Geral
 
-O programa é uma implementação computacional avançada destinada a resolver uma variante desafiadora do problema do Passeio do Cavalo, um clássico da teoria dos jogos e da inteligência artificial. Neste problema, o cavalo do xadrez deve visitar cada casa de um tabuleiro de xadrez 10x10 exatamente uma vez, seguindo as regras tradicionais de movimento dos cavalos no xadrez.
-Esta implementação específica difere do problema clássico de várias maneiras significativas:
-- Tabuleiro Pontuado: Cada casa no tabuleiro não é apenas uma casa para ser visitada, mas contém uma pontuação que o cavalo acumula ao visitar. O objetivo é maximizar a pontuação total, não apenas visitar todas as casas.
-- Regras Especiais: O jogo inclui regras especiais para movimentos que são simétricos ou formam um 'duplo', o que afeta a estratégia de maximização da pontuação.
-- Competição: Existe a dimensão de competir contra um oponente, o que adiciona uma camada estratégica à sequência de movimentos escolhida.
-- O programa utiliza algoritmos de procura como BFS, DFS e A*, cada um com suas particularidades e heurísticas específicas para navegar no espaço de soluções do problema. As heurísticas são regras ou métodos que ajudam a otimizar a busca pela solução mais eficiente e eficaz.
-
-O programa foi desenhado com uma ênfase na clareza e na facilidade de uso, garantindo que mesmo utilizadores sem experiência prévia em inteligência artificial possam operá-lo e compreender os conceitos subjacentes através de uma interface interativa e instrutiva.
+1. Quando o jogo é iniciado, o utilizador pode escolher entre diferentes modos de jogo (Humano vs Computador ou Computador vs Computador). Dependendo do modo selecionado, o programa inicia o ambiente de jogo, que inclui a criação de um tabuleiro e a definição dos jogadores.
+2. O programa gera um tabuleiro de jogo, que é uma matriz de números, representando pontos. Cada jogador (humano ou computador) começa o jogo posicionando seu cavalo em uma posição estratégica na primeira ou última linha do tabuleiro, dependendo de qual jogador eles são.
+3. Durante o jogo, os jogadores se revezam para mover seus cavalos. O cavalo se move em um padrão em "L" (como no xadrez), e o jogador ganha pontos com base no valor da célula em que o cavalo pousa. O jogo também inclui regras especiais, como números simétricos e duplos, que afetam o tabuleiro e a estratégia de jogo.
+4. Quando é a vez do computador jogar, o programa utiliza o algoritmo AlfaBeta para decidir o melhor movimento. Este algoritmo analisa as possíveis jogadas, prevendo os movimentos futuros do adversário e escolhendo a jogada que maximiza a chance de ganhar, enquanto minimiza as possíveis respostas do oponente. Durante este processo, o algoritmo efetua cortes alfa-beta para reduzir o número de caminhos analisados, aumentando a eficiência.
+5. No modo Humano vs Computador, o usuário insere sua jogada por meio do teclado, e o computador responde com sua jogada, calculada pelo algoritmo AlfaBeta. No modo Computador vs Computador, ambos os jogadores são controlados pelo computador, e o jogo se desenrola automaticamente.
+6. O jogo continua até que um dos jogadores ganhe, o que ocorre quando um dos jogadores não pode mais fazer movimentos válidos ou quando as condições de vitória pré-definidas são atendidas. O programa então determina o vencedor com base nos pontos acumulados ou outros critérios de vitória estabelecidos.
+7. Ao longo do jogo, o programa registra várias métricas, como o número de nós analisados, cortados e o tempo gasto em cada jogada. Estes dados são úteis para análise posterior, especialmente para avaliar a eficácia e eficiência do algoritmo AlfaBeta.
+8. Após cada jogada, o programa fornece feedback visual e textual ao usuário, mostrando o estado atual do tabuleiro, a pontuação e quaisquer outras informações relevantes.
 
 ## Como Usar
 
